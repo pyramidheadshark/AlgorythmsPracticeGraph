@@ -94,25 +94,7 @@ public class Graph
             IncidenceMatrix[destIndex, nextEdgeIndex] = -weight;
         }
     }
-
-
-    public void CreateFromIncidenceMatrix(int[,] matrix, string[] vertexNames, string[] vertexMarks)
-    {
-        var numVertices = matrix.GetLength(0);
-        var numEdges = matrix.GetLength(1);
-
-
-        if (vertexNames.Length != numVertices || vertexMarks.Length != numVertices)
-            throw new ArgumentException("The number of vertex names and marks must match the matrix dimensions.");
-
-
-        for (var i = 0; i < numVertices; i++) AddVertex(vertexNames[i], vertexMarks[i]);
-
-
-        IncidenceMatrix = new int[numVertices, numEdges];
-        Array.Copy(matrix, IncidenceMatrix, matrix.Length);
-    }
-
+    
 
     private void RebuildIncidenceMatrix(int? newEdgeCount = null, bool preserveExistingEdges = false)
     {
@@ -196,6 +178,50 @@ public class Graph
         foreach (var edge in edges) sb.AppendLine($"{edge.Source?.Name} --({edge.Weight})--> {edge.Destination?.Name}");
 
         Console.WriteLine(sb.ToString());
+    }
+    
+    public void CreateFromAdjacencyMatrix(int[,] adjacencyMatrix, string[] vertexMarks)
+    {
+        int numVertices = adjacencyMatrix.GetLength(0);
+
+        if (adjacencyMatrix.GetLength(1) != numVertices || vertexMarks.Length != numVertices)
+        {
+            throw new ArgumentException("Invalid adjacency matrix or vertex marks dimensions.");
+        }
+
+        for (int i = 0; i < numVertices; i++)
+        {
+            AddVertex(((char)('A' + i)).ToString(), vertexMarks[i]);
+        }
+
+        int numEdges = 0;
+        for (int i = 0; i < numVertices; i++)
+        {
+            for (int j = 0; j < numVertices; j++)
+            {
+                if (adjacencyMatrix[i, j] > 0)
+                {
+                    numEdges++;
+                }
+            }
+        }
+
+        IncidenceMatrix = new int[numVertices, numEdges];
+        int edgeIndex = 0;
+
+        for (int i = 0; i < numVertices; i++)
+        {
+            for (int j = 0; j < numVertices; j++)
+            {
+                if (adjacencyMatrix[i, j] > 0)
+                {
+                    IncidenceMatrix[i, edgeIndex] = adjacencyMatrix[i, j];  // Source vertex gets positive value
+                    IncidenceMatrix[j, edgeIndex] = -adjacencyMatrix[i, j]; // Destination vertex gets negative value
+
+                    edgeIndex++;
+                }
+            }
+        }
     }
 }
 
@@ -407,15 +433,14 @@ public static class GraphExtensions
             var numVertices = graph.IncidenceMatrix.GetLength(0);
             var numEdges = graph.IncidenceMatrix.GetLength(1);
 
-
             for (var j = 0; j < numEdges; j++)
             {
                 Vertex? source = null;
                 Vertex? dest = null;
                 var weight = 0;
 
-
                 for (var i = 0; i < numVertices; i++)
+                {
                     if (graph.IncidenceMatrix[i, j] > 0)
                     {
                         weight = graph.IncidenceMatrix[i, j];
@@ -425,12 +450,14 @@ public static class GraphExtensions
                     {
                         dest = graph.Vertices[i];
                     }
-
-
-                if (source != null && dest != null) edges.Add(new Edge(source, dest, weight));
+                }
+                if (source != null && dest != null)
+                {
+                    edges.Add(new Edge(source, dest, weight));
+                }
+           
             }
         }
-
         return edges;
     }
 }
